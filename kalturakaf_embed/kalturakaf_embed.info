@@ -1,0 +1,5 @@
+name = Kaltura KAF - Embedded Video
+description = Provides a field that can be added to content types which allows you to embed videos from your KAF instance
+core = 7.x
+package = "Kaltura KAF"
+dependencies[] = kalturakaf

@@ -1,0 +1,15 @@
+<?php
+/**
+ * Implements hook_field_schema().
+ */
+function kalturakaf_embed_field_schema($field) {
+      $columns = array(
+        'embedded' => array(
+          'type' => 'varchar',
+          'length' => 2048,
+          'not null' => FALSE,
+        ),
+      );
+  return array('columns' => $columns);
+}
+?>

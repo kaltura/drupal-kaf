@@ -1,0 +1,114 @@
+<?php
+/**
+ * @file
+ * Includes all field hook implementations for the custom KalturaKaf block which renders a gallery in OG contexts
+ */
+module_load_include('php', 'kalturakaf', 'kalturaClient/KalturaClient');
+
+define('KALTURAKAF_GALLERY_URI', '/hosted/index/course-gallery');
+
+/**
+ * Implements hook_block_info().
+ */
+function kalturakaf_gallery_block_info() {
+  // This example comes from node.module.
+  $blocks['groupgallery'] = array(
+    'info' => t('Group Gallery'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function kalturakaf_gallery_block_view($delta = '') {
+  // This example is adapted from node.module.
+  $block = array();
+
+  switch ($delta) {
+    case 'groupgallery':
+      $block['subject'] = t('Group Gallery');
+      $block['content'] = kalturakaf_gallery_block_view_render();
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Expected that this block would only be placed in a group context (group content type)
+ * @return String
+ */
+function kalturakaf_gallery_block_view_render()
+{
+    $content = '';
+    
+    $role = kalturakaf_get_contexual_role();
+    if($role != KalturaCategoryUserPermissionLevel::NONE)
+    {
+        drupal_add_js(drupal_get_path('module', 'kalturakaf') . '/kalturakaf.js');
+        // prepare privielges for the gallery page
+        $privileges = kalturakaf_gallery_get_privileges($role);
+        
+        // use core function to generate frame URL including a KS
+        $frameSrc = kalturakaf_get_frame_src(KALTURAKAF_GALLERY_URI, $privileges);
+        
+        // place code in page that uses the JS to load the iframe
+        $content = '<div id="group-gallery"></div>';
+        $content .= '<script>kalturakaf.load("group-gallery", "'.$frameSrc.'", false);</script>';
+    }
+   
+    return $content;
+}
+
+/**
+ * helper function to build all privileges required for media-gallery KAF page
+ * 
+ * @param KalturaCategoryUserPermissionLevel $role
+ * @return array
+ */
+function kalturakaf_gallery_get_privileges($role)
+{
+    $privileges = array();
+    $ctx = og_context();
+    
+    $node = node_load($ctx['gid']);
+    
+    $privileges['contextId'] = $ctx['gid'];
+    $privileges['contextTitle'] = $node->title;
+    $privileges['role'] = 'privateOnlyRole';
+    $privileges['userContextualRole'] = $role;
+    
+    return $privileges;
+}
+
+/**
+ * helper function to determine the contextual role of the user within a context
+ */
+function kalturakaf_get_contexual_role()
+{
+    $return = KalturaCategoryUserPermissionLevel::NONE;
+    $ctx = og_context();
+    if(isset($ctx['group_type']))
+    {
+        $contextId = $ctx['gid'];
+        if(og_is_member($ctx['group_type'], $contextId))
+        {
+            $isManager = og_user_access($ctx['group_type'], $contextId, 'administer group');
+            if($isManager)
+            {
+                $return = KalturaCategoryUserPermissionLevel::MANAGER;
+            }
+            else
+            {
+                $return = KalturaCategoryUserPermissionLevel::CONTRIBUTOR;
+            }
+        }
+        else
+        {
+            $return = KalturaCategoryUserPermissionLevel::MEMBER;
+        }
+    }
+    return $return;
+}

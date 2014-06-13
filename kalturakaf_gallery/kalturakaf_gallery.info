@@ -1,0 +1,8 @@
+name = Kaltura KAF - Gallery
+description = Provides a block that renders a gallery from your KAF instance, for a specific context (Organic Groups context)
+core = 7.x
+package = "Kaltura KAF"
+dependencies[] = kalturakaf
+dependencies[] = og
+dependencies[] = og_context
+

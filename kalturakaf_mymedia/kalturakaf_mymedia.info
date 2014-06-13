@@ -1,0 +1,5 @@
+name = Kaltura KAF - My Media
+description = Adds the my-media page and relevant permission that can be granted to specific roles
+core = 7.x
+package = "Kaltura KAF"
+dependencies[] = kalturakaf

@@ -1,0 +1,105 @@
+<?php
+
+/**
+ * @file kalturakaf.module
+ * This file includes general module hooks implementations
+ */
+module_load_include('php', 'kalturakaf', 'kalturaClient/KalturaClient');
+define('KALTURAKAF_NOT_INITIALIZED_ERR', 'Kaltura KAF module is not initialized. Complete the module configuration first in ');
+
+
+/**
+ * Implements hook_menu().
+ */
+function kalturakaf_menu() {
+  $items['admin/config/media/kalturakaf'] = array(
+    'title' => 'Kaltura-KAF module settings',
+    'file' => 'kalturakaf_admin.php',
+    'description' => t('Check on the server integration status with Kaltura, import entries from Kaltura, see existing media and edit metadata and additional configuration options.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('kalturakaf_setup_form'),
+    'access arguments' => array('administer site configuration'),
+    'weight' => -10,
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+function kalturakaf_is_initialized()
+{
+    if(!variable_get('kalturakaf_partner_id'))
+    {
+        return false;
+    }
+    
+    if(!variable_get('kalturakaf_admin_secret'))
+    {
+        return false;
+    }
+    
+    if(!variable_get('kalturakaf_url'))
+    {
+        return false;
+    }
+    
+    return true;
+}
+
+function kalturakaf_get_frame_src($uri, $privileges, $isAbsolute = false)
+{
+    $userId = kalturakaf_get_username();
+    
+    if(!kalturakaf_is_initialized()) {
+        $adminLink = l('admin/config/media/kalturakaf');
+        throw new Exception(KALTURAKAF_NOT_INITIALIZED_ERR . $adminLink);
+    }
+    if(!is_array($privileges)) {
+        throw new Exception("KAF frame src privileges must be an array");
+    }
+    
+    $config = new KalturaConfiguration(variable_get('kalturakaf_partner_id'));
+    $client = new KalturaClient($config);
+    if(!isset($privileges['actionslimit'])) {
+        $privileges['actionslimit'] = -1;
+    }
+    $privStr = '';
+    foreach($privileges as $priv => $value) {
+        $privStr .= $priv . ":" . $value . ",";
+    }
+    $ks = $client->generateSessionV2(variable_get('kalturakaf_admin_secret'), 
+            $userId, 
+            KalturaSessionType::USER, 
+            variable_get('kalturakaf_partner_id'),
+            60,
+            $privStr
+    );
+    
+    if(!$isAbsolute)
+    {
+        // remove trailing slashes just in case, as it may break KAF friendly-URL structure
+        rtrim($uri, '/');
+        $url = variable_get('kalturakaf_url') . $uri . '/ks/' . $ks;
+    }
+    else
+    {
+        rtrim($uri, '/');
+        $url = $uri . '/ks/' . $ks;
+    }
+    
+    return $url;
+}
+
+function kalturakaf_get_username()
+{
+    global $user;
+    if($user->uid > 0)
+    {
+        $userId = $user->name;
+    }
+    else
+    {
+        $userId = '';
+    }
+    return $userId;
+}

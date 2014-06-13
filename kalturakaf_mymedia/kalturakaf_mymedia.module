@@ -1,0 +1,74 @@
+<?php
+/**
+ * @file
+ * Includes all field hook implementations for the custom KalturaKaf mymedia page
+ */
+module_load_include('php', 'kalturakaf', 'kalturaClient/KalturaClient');
+define('KALTURAKAF_MYMEDIA_URI', '/hosted/index/my-media');
+
+/**
+ * Implements hook_menu().
+ */
+function kalturakaf_mymedia_menu() {
+    // defining the my-media page
+  $items['mymedia'] = array(
+    'title' => 'My Media',
+    'page callback' => 'kalturakaf_mymedia',
+    'access callback' => 'kalturakaf_access_my_media',
+    'access arguments' => array('kalturakaf_access_my_media'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+  
+/**
+ * define permission for my-media page
+ * 
+ * Implements hook_permission
+ */
+function kalturakaf_mymedia_permission()
+{
+  return array(
+    'kalturakaf_access_my_media' => array(
+      'title' => t('Access My-Media'),
+      'description' => t('Access the My-Media page which means ability to upload content'),
+    ),
+  );
+}
+
+
+
+/**
+ * callback function to determine if user has access to my-media based on logged-in state and specific permission
+ * 
+ * @return boolean
+ */
+function kalturakaf_access_my_media()
+{
+    return (user_is_logged_in() && user_access('kalturakaf_access_my_media'));
+}
+
+/**
+ * my-media page implementation
+ * 
+ * @return string
+ */
+function kalturakaf_mymedia()
+{
+    // load the general JS that places iframe
+    drupal_add_js(drupal_get_path('module', 'kalturakaf') . '/kalturakaf.js');
+    
+    // prepare privielges for the my-media page
+    $privileges = array(
+        'role' => 'privateOnlyRole',
+    );
+    
+    // use core function to generate frame URL including a KS
+    $frameSrc = kalturakaf_get_frame_src(KALTURAKAF_MYMEDIA_URI, $privileges);
+    
+    // place code in page that uses the JS to load the iframe
+    $content = '<div id="mymedia"></div>';
+    $content .= '<script>kalturakaf.load("mymedia", "'.$frameSrc.'", true);</script>';
+    
+    return $content;
+}

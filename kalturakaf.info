@@ -1,0 +1,6 @@
+name = Kaltura KAF
+description = integrates Kaltura Application Framework
+core = 7.x
+package = "Kaltura KAF"
+dependencies[] = jquery_update
+
