@@ -57,11 +57,7 @@ function kalturakaf_embed_field_info() {
  * Implements hook_field_validate().
  *
  * This hook gives us a chance to validate content that's in our
- * field. We're really only interested in the $items parameter, since
- * it holds arrays representing content in the field we've defined.
- * We want to verify that the items only contain embedded hex values like
- * this: #RRGGBB. If the item validates, we do nothing. If it doesn't
- * validate, we add our own error notification to the $errors parameter.
+ * field. 
  *
  * @see kalturakaf_field_widget_error()
  */
@@ -78,19 +74,13 @@ function kalturakaf_embed_field_validate($entity_type, $entity, $field, $instanc
  * the form API flag an error when required fields are empty.
  */
 function kalturakaf_embed_field_is_empty($item, $field) {
-    watchdog('kaf-embed', 'item embedded is '.print_r($item['embedded'],true));
-    watchdog('kaf-embed', 'POST is '.print_r($_POST,true));
   return empty($item['embedded']);
 }
 
 /**
  * Implements hook_field_formatter_info().
  *
- * We need to tell Drupal that we have two different types of formatters
- * for this field. One will change the text color, and the other will
- * change the background color.
- *
- * @see kalturakaf_field_formatter_view()
+ * @see kalturakaf_embed_field_formatter_view()
  */
 function kalturakaf_embed_field_formatter_info() {
   return array(
@@ -105,11 +95,7 @@ function kalturakaf_embed_field_formatter_info() {
 /**
  * Implements hook_field_formatter_view().
  *
- * Two formatters are implemented.
- * - kalturakaf_embedded_video just outputs markup indicating the color that
- *   was entered and uses an inline style to set the text color to that value.
- * - kalturakaf_color_background does the same but also changes the
- *   background color of div.region-content.
+ * The formatter simply calls a separate function that renders the actual markup
  *
  * @see kalturakaf_field_formatter_info()
  */
@@ -133,27 +119,12 @@ function kalturakaf_embed_field_formatter_view($entity_type, $entity, $field, $i
 /**
  * Implements hook_field_widget_info().
  *
- * Three widgets are provided.
- * - A simple text-only widget where the user enters the '#ffffff'.
- * - A 3-textfield widget that gathers the red, green, and blue values
- *   separately.
- * - A farbtastic colorpicker widget that chooses the value graphically.
- *
- * These widget types will eventually show up in hook_field_widget_form,
- * where we will have to flesh them out.
+ * A single widget is provided - link that loads the BSE KAF module in a modal window.
  *
  * @see kalturakaf_field_widget_form()
  */
 function kalturakaf_embed_field_widget_info() {
   return array(
-    /*'kalturakaf_text' => array(
-      'label' => t('embedded value as #ffffff'),
-      'field types' => array('kalturakaf_embedded'),
-    ),
-    'kalturakaf_3text' => array(
-      'label' => t('embedded text field'),
-      'field types' => array('kalturakaf_embedded'),
-    ),*/
     'kalturakaf_video_selector' => array(
       'label' => t('Video Selector'),
       'field types' => array('kalturakaf_embedded'),
@@ -239,6 +210,11 @@ function kalturakaf_embed_field_widget_error($element, $error, $form, &$form_sta
   }
 }
 
+/**
+ * main function that handles the rendering of "select video" link
+ * @return string
+ */
+
 function kalturakaf_embed_suffix_content($counter)
 {
     $url = base_path().'kalturakaf/embed?instance='.$counter;
@@ -246,8 +222,16 @@ function kalturakaf_embed_suffix_content($counter)
     return $link;
 }
 
+/**
+ * Sicne it is implemented based on "simple modal" - there is an AJAX to a page from which some content is cloned into the modal.
+ * This function outputs the contents of this page
+ * 
+ * @return string
+ */
 function kalturakaf_embed_load_bse()
 {
+    // preparing the full URL of the "returnUrl" parameter.
+    // This is where BSE will POST back the user selection data to.
     $baseUri = 'kalturakaf/embed_result/field/kalturakaf-video-'.$_GET['instance'];
     $returnUrl = urlencode(url($baseUri, array('absolute' => TRUE)));
 
@@ -267,6 +251,12 @@ function kalturakaf_embed_load_bse()
     return $content;
 }
 
+/**
+ * callback function for the "return URL" page
+ * 
+ * @param type $fieldId
+ * @return string
+ */
 function kalturakaf_embed_process_return($fieldId)
 {
     //serialize and encode the data to save into the DB as is
@@ -277,7 +267,12 @@ function kalturakaf_embed_process_return($fieldId)
     return $content;
 }
 
-
+/**
+ * callback function that is called to render the field when displayed in the site.
+ * 
+ * @param type $item
+ * @return string
+ */
 function kalturakaf_embed_field_formatter_display_video($item)
 {
     // unserialize the value from the DB

@@ -47,7 +47,9 @@ function kalturakaf_gallery_block_view_render()
     $role = kalturakaf_get_contexual_role();
     if($role != KalturaCategoryUserPermissionLevel::NONE)
     {
+        // load the general JS file to the page
         drupal_add_js(drupal_get_path('module', 'kalturakaf') . '/kalturakaf.js');
+        
         // prepare privielges for the gallery page
         $privileges = kalturakaf_gallery_get_privileges($role);
         

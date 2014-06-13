@@ -5,6 +5,11 @@
  */
 module_load_include('php', 'kalturakaf', 'kalturaClient/KalturaClient');
 
+/**
+ * function build a form for the configuration page
+ * 
+ * @return array 
+ */
 function kalturakaf_setup_form() {
     $form = array();
     $form['kaf_url'] = array(
@@ -39,6 +44,13 @@ function kalturakaf_setup_form() {
     return $form;
 }
 
+/**
+ * Implements hool_form_validate
+ * we check if the given values are correct 
+ * 
+ * @param type $form
+ * @param type $form_state
+ */
 function kalturakaf_setup_form_validate($form, &$form_state) {
     $values = $form_state['values'];
     if(isset($values['kaf_url']) && isset($values['partner_id']) && isset($values['admin_secret']) && isset($values['kaltura_server_url'])) {
@@ -56,6 +68,13 @@ function kalturakaf_setup_form_validate($form, &$form_state) {
     }
 }
 
+/**
+ * Implements hook_form_submit
+ * we just save the info to drupal's variable table
+ * 
+ * @param type $form
+ * @param type $form_state
+ */
 function kalturakaf_setup_form_submit($form, &$form_state) {
     $values = $form_state['values'];
     if(!kalturakaf_verify_details($values['partner_id'], $values['admin_secret'], $values['kaltura_server_url'])) {
@@ -71,6 +90,14 @@ function kalturakaf_setup_form_submit($form, &$form_state) {
     }
 }
 
+/**
+ * Helper function to verify if given parameters are correct by calling the API with the given Partner ID and secret
+ * 
+ * @param integer $partnerId
+ * @param string $secret
+ * @param string $kalturaHost
+ * @return boolean
+ */
 function kalturakaf_verify_details($partnerId, $secret, $kalturaHost)
 {
     $config = new KalturaConfiguration($partnerId);

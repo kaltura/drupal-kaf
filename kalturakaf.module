@@ -26,6 +26,11 @@ function kalturakaf_menu() {
   return $items;
 }
 
+/**
+ * helper function to check if the module is properly configured
+ * 
+ * @return boolean
+ */
 function kalturakaf_is_initialized()
 {
     if(!variable_get('kalturakaf_partner_id'))
@@ -46,32 +51,53 @@ function kalturakaf_is_initialized()
     return true;
 }
 
+/**
+ * helper function to generate a KS and attach it to the KAF page URL.
+ * the result should be used as the iFrame SRC
+ * 
+ * @param string $uri
+ * @param array $privileges
+ * @param boolean $isAbsolute
+ * @return string
+ * @throws Exception
+ */
 function kalturakaf_get_frame_src($uri, $privileges, $isAbsolute = false)
 {
+    // get the current user ID for the KS
     $userId = kalturakaf_get_username();
     
+    // verify module is configured
     if(!kalturakaf_is_initialized()) {
         $adminLink = l('admin/config/media/kalturakaf');
         throw new Exception(KALTURAKAF_NOT_INITIALIZED_ERR . $adminLink);
     }
+    
+    // verify we recieved privileges - we can't work without specific privileges per KAF page
     if(!is_array($privileges)) {
         throw new Exception("KAF frame src privileges must be an array");
     }
     
+    // get required parameters
     $config = new KalturaConfiguration(variable_get('kalturakaf_partner_id'));
     $client = new KalturaClient($config);
+    
+    // add actionsLimit privilege with -1 to make sure KS can't be used to perform API calls to Kaltura
     if(!isset($privileges['actionslimit'])) {
         $privileges['actionslimit'] = -1;
     }
+    
+    // bulild privileges as string
     $privStr = '';
     foreach($privileges as $priv => $value) {
         $privStr .= $priv . ":" . $value . ",";
     }
+    
+    // generate the KS
     $ks = $client->generateSessionV2(variable_get('kalturakaf_admin_secret'), 
             $userId, 
-            KalturaSessionType::USER, 
+            KalturaSessionType::USER, // forcing type USER so KS is weak
             variable_get('kalturakaf_partner_id'),
-            60,
+            60, // limiting to short expiry
             $privStr
     );
     
@@ -90,6 +116,12 @@ function kalturakaf_get_frame_src($uri, $privileges, $isAbsolute = false)
     return $url;
 }
 
+/**
+ * helper function to determine the name of the currently logged-in user
+ * 
+ * @global stdClass $user
+ * @return string
+ */
 function kalturakaf_get_username()
 {
     global $user;
